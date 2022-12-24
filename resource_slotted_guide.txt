@@ -1,0 +1,70 @@
+Hello everyone and welcome to the Resource slotter guide :)
+
+The script might seem overwhelming at first, but this document is here to help you ;)
+
+During writing the code I have encountered a lot of user wishes, which became options that you can change.
+Based on your changes the slotting will happen differently.
+
+The first and most important configuration option is called "DoSlot". It currently have the value of "false", which means while other things can happen, no actual slotting will take place, only calculations.
+
+The second most important option is "UnSlotPropertiesFirst". If you set it true the script will unslot all your properties.
+Why is that? You could want to have a "full reslot" where the script calculates a slotting and applies it too, or just want to add to fill the slots still there.
+
+Once you decide to adjust or reslot your properties the next step is "Pass 1"
+During Pass 1 the script goes through your properties and calculates what jewels could where add.
+There are a few more options you can change:
+
+1) which properties you want to slot: All? Only Tier1? Only Tier2? You can control these if you want ;)
+Config options ProcessT1 and ProcessT2 decides which properties are processed
+2) which properties you want to slot: All? Only between certain tile counts? You can control these too if you want.
+Config options TileCountMin_Tier1, TileCountMax_Tier1, TileCountMin_Tier2 and TileCountMax_Tier2 sets the limits for both Tier1 and Tier2 properties.
+By default these are set to 9-9999 so any property with at least 9 tiles will be considered during Pass1
+3) do you want to slot higher class T1 first, instead of just the more tiles? 
+You can control that by OrderByClassFirst
+
+You might also want to skip processing for those properties where you already have jewels slotted. If you set SkipPropertiesWithAlreadySlottedJewels to true, during Pass1 we completely ignore these (and only consider them later in specific cases, see below in Pass2)
+
+The next step is to decide what resource quality or qualities to slot.
+You might want to focus on HF only, or UF only, or both. using ResourceQualitiesToSlot you can set it to your needs.
+
+Once a property with resource(s) is being processed we face the next question:
+Which resource is more important to you? Say.. you have a property with all of the available resources, but less slot than those. 
+In order to prime resource production the script would need to know your priorities.
+That you can set in ResourceTypesToSlot, that controls the order of resources to focus on.
+Currently it is Coal, Iron, Gold, Oil and finally Limestone, but you can change it to your needs.
+I have set it this way because I only have a few properties with Coal, but many more with Oil and wanted to ensure that I get the most Coal out. 
+In case you want to prime only for say... Oil, just remove the other options and the script will only care about Oil resource :)
+
+Now the script happy and is chugging through the properties, when it encounters yet another issue to solve:
+There is an Interference with capital I.
+This happens when more than one of the Coal-Gold-Oil resource triad appears on the property. Interference severely limits the resource production, so we need a solution to that. We can either chose to ignore it, or solve it. 
+Config option IgnoreInterference controls whether we let the calculated jewels stay as is, or keep only the most important one. How do we know which is the most important? By using the same order as above (ResourceTypesToSlot).
+Now however you can encounter the case where you have Coal UF and Gold HF on your property, and you think in this case Gold should be produced there rather than coal. In this case you only need to set the next value: PreferHFOverSlotOrderForInterference.
+
+In case you are happy with what is already slotted, and only want to use the jewels currently in your inventory just set UseInventoryJewelsOnly to true (it is like that now)
+
+Once the priming jewel(s) for a property is set, the next step is to boost production performance. We can do this by using two types of jewels:
+# Multicoloured ones (e.g. Jade, Jamaica)
+# Single-color ones (e.g. Ochre)
+Slotting multiple jewels of same color gives us diminishing boost, so we might want to avoid that. By setting AllowPrimingJewelForBoost to true you allow the script to use e.g. Ochre for resource boost instead of a multicolor first.
+Using config option UseSameBoosterOnlyOnce you can decide if you want to see only one of the same color or you are fine with multiple ones.
+If you set the above to "true" you still have the option to limit the amount of the jewels to use in a property by setting MaximumRepetitionForSameBoosterJewel
+
+You might also want to keep the jewels used for raiding separately. SkipRaidingJewels lets you ignore those.
+
+The next step is to continue filling your free slots, this time with either Purple and Orange or just Purple (if you set SkipRaidingJewels to true, as orange is used there).
+
+With this, Pass1 finishes, and Pass2 starts. But only if you decide that you want to fill the remaining slots :)
+There are 4 options, one is the above mentioned MaximumRepetitionForSameBoosterJewel.
+During Pass2 we first try to use boosters again (up to that maximum repetition number if FillPropertiesWithResourcesForMaximumEtherDetection is true), and then we process the remaining properties (those without resources, and those with resources but outside of the tile count limits) if FillRemainingPropertiesForMaximumEtherDetection is true.
+
+During Pass2 the script won't care about resources, only about filling properties to ensure the highest e-ther detection.
+
+ 
+
+
+
+
+
+
+
