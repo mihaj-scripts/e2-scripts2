@@ -4,6 +4,7 @@
 //(for a given tier, color and quality) that doesn't have an item in the market itself
 //* If you change [ShowFloorItem] to false no check for floor prices happen (faster)
 
+//update 06/08/2023: updated user list
 //update 30/06/2023: fix api change
 //update 06/04/2023: updated user list
 //update 21/01/2023: updated user list
