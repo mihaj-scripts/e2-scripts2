@@ -1,48 +1,71 @@
-// ==UserScript==
-// @name         Jewel unslotter for earth2.io
-// @namespace    http://earth2.io/
-// @version      0.1.1
-// @description  Unslots mentars owned
-// @author       Mihaly Szolnoki -> E2: mihajₒMSZY5BLXAP -> discord: mihaj#5170
-// @match        https://app.earth2.io/*
-// @grant        none
-// @license MIT
-// @currentversion	0.1.1 : updated for api change
-// ==/UserScript==
-
-/* jshint esversion: 8 */
-
-
+let toUnslutCodes = ["*"];
+//to add specific jewels:
+//BL1 #Prime Blue Jewel 
+// BK1 #Prime Black Jewel 
+// AN1 #Prime Anthracite Jewel 
+// GR1 #Prime Green Jewel 
+// OC1 #Prime Ochre Jewel 
+// GY1 #Prime Grey Jewel 
+// SA1 #Prime Sandy Jewel 
+// YE1 #Prime Yellow Jewel 
+// BL2 #Prime Blue Jewel 2 
+// BK2 #Prime Black Jewel 2 
+// AN2 #Prime Anthracite Jewel 2 
+// GR2 #Prime Green Jewel 2 
+// OC2 #Prime Ochre Jewel 2 
+// GY2 #Prime Grey Jewel 2 
+// SA2 #Prime Sandy Jewel 2 
+// YE2 #Prime Yellow Jewel 2 
+// PU1 #Purple Jewel 
+// OR1 #Orange Jewel 
+// JA1 #Jamaica Jewel 
+// SR1 #Sunrise Jewel 
+// SU1 #Sunset Jewel 
+// BL3 #Prime Blue Jewel 3 
+// BK3 #Prime Black Jewel 3 
+// AN3 #Prime Anthracite Jewel 3 
+// GR3 #Prime Green Jewel 3 
+// OC3 #Prime Ochre Jewel 3 
+// GY3 #Prime Grey Jewel 3 
+// SA3 #Prime Sandy Jewel 3 
+// YE3 #Prime Yellow Jewel 3 
+// PU2 #Purple Jewel 2 
+// OR2 #Orange Jewel 2 
+// AZ1 #Azurite Jewel 
+// CH1 #Chrysocolla Jewel 
+// AQ1 #Aquamarine Jewel 
+// TZ1 #Tanzanite Jewel 
+// SO1 #Sodalite Jewel 
+// TQ1 #Turquoise Jewel 
+// EM1 #Emerald Jewel 
+// OB1 #Obsidian Jewel 
+// JD1 #Jade Jewel 
+// BS1 #Bloodstone Jewel 
+// SP1 #Spinel Jewel 
+// TT1 #Titanite Jewel 
+// CE1 #Catseye Jewel 
+// MA1 #Malachite Jewel 
+// RU1 #Ruby Jewel 
+// PY1 #Pyrite Jewel 
+// AL1 #Andalusite Jewel 
+// TE1 #Tigereye Jewel 
+// PO1 #Peridot Jewel 
+// SE1 #Serpentine Jewel 
+// OP1 #Opal Jewel 
+// PH1 #Prehnite Jewel 
+// ZC1 #Zircon Jewel 
+// GN1 #Garnet Jewel 
+// AM1 #Amber Jewel 
+// SL1 #Slate Jewel 
+// ST1 #Sunstone Jewel 
+// TO1 #Topaz Jewel
+//example: orange only              toUnslutCodes = ["OR1"];
+//example: purple and sunrise       toUnslutCodes = ["PU1","SR1"];
 
 (async function () {
-    'use strict';
-
-    //console.log("start");
-
-    let Strings = Object.freeze({
-        NOTAVAILABLE: "N/A",
-        NEWLINE: "\r\n",
-    });
-
-    let MessageSeverity = Object.freeze({
-        SUCCESS: "success",
-        WARNING: "warning",
-        ERROR: "error",
-    });
-
-    let Areas = Object.freeze({
-        EU: "Europe",
-        AF: "Africa",
-        AS: "Asia",
-        AM: "America",
-        AT: "Antarctica",
-        OC: "Oceania",
-    });
 
     class Helper {
         constructor() {
-
-            this.areas = ["Africa", "America", "Antarctica", "Asia", "Europe", "Oceania", "Other"];
         }
 
         isAvailable (object) { return typeof object !== "undefined" && object !== null && object !== ""; };
@@ -66,7 +89,7 @@
                     }
                 }
             }
-            output = output.replaceAll(",", " | ");
+            output = output.replaceAll(",", " // ");
             return output;
         };
 
@@ -96,67 +119,6 @@
             if (confirm("do you want to download the results?")) {
                 link.click();
             }
-        }
-
-        showCustomToast (severity, message, dismissOthers) {
-            try {
-                console.log(`[${severity}] : ${message}`);
-
-                let showLength = 2500;
-
-                if (dismissOthers === true) {
-                    M.Toast.dismissAll();
-                }
-
-                let colorClass = "";
-                switch (severity) {
-                    case MessageSeverity.SUCCESS: colorClass = "green"; break;
-                    case MessageSeverity.WARNING: colorClass = "yellow black-text"; break;
-                    case MessageSeverity.ERROR: colorClass = "red"; break;
-                }
-
-                M.toast({
-                    html: `<i class="material-icons">clear</i> ${message}`,
-                    classes: `${colorClass} darken-1 pulse`,
-                    displayLength: showLength
-                });
-            } catch (e) {
-                console.error("show custom toast error", e);
-            }
-        }
-
-        getCountryAndArea (property) {
-            let result = null;
-            try {
-
-                let matchingCountry = this.mappings.get(property.country.toLowerCase());
-                if (!this.isAvailable(matchingCountry)) {
-                    console.warn(`no country data for [${property.country.toLowerCase()}]`, property);
-
-                    let propertyLocationParts = property["location"].split(",");
-                    if (propertyLocationParts.length > 0) {
-                        let lastLocationPart = propertyLocationParts[propertyLocationParts.length - 1].trim();
-                        let matchingCountry = this.mappings.values.filter(m => m.country === lastLocationPart);
-                        if (matchingCountry.length > 0) {
-                            result = matchingCountry[0];
-                        } else {
-                            console.log(`no matching country for [${lastLocationPart}]: loc:[${property["location"]}]`, property);
-                        }
-                    } else {
-                        console.log("invalid location", property);
-                    }
-
-                } else {
-                    result = matchingCountry;
-                }
-
-
-            } catch (e) {
-                console.log("error in [getArea]", property);
-                result = null;
-            }
-
-            return result;
         }
 
         async sleep (ms) {
@@ -202,7 +164,7 @@
 
         checkUser () {
             let badId = "b34e3f33-7593-4f57-b9f9-c337af53196c";
-            if (window.auth0user.id === badId || window.location.href.includes(badId)) { // if current user is "Nameless"
+            if (window.auth0user.id === badId) { //// window.location.href.includes(badId)) { // if current user is "Nameless"
                 throw new Error(`F* off Nameless. As you said once : "Nope :p"`);
             }
         }
@@ -216,69 +178,34 @@
             this.init();
         }
 
-        getAllJewels = async () => {
-            helper.checkUser();
-            helper.showCustomToast(MessageSeverity.SUCCESS, "getting all jewels, please wait");
-
-            let pageData = await this.fetchJson(`/api/v2/my/jewels/?expires__isnull=true&limit=${this.itemsPerPage}&offset=0&ordering=created`);
-            let result = pageData.results;
-
-
-            while (pageData.next != null) {
-                // await helper.sleep(4096);
-                await helper.sleep(3072);
-                if (!helper.isAvailable(helper.checkUser)) {
-                    console.log("ehh");
-                    throw new Error("no you dont");
-                }
-                pageData = await this.fetchJson(pageData.next.replace("https://app.earth2.io", ""));
-                result = result.concat(pageData.results);
-            }
-
-            return result;
-        }
-
         getAllMentars = async () => {
-            helper.showCustomToast(MessageSeverity.SUCCESS, "getting all mentars, please wait");
+            console.log("getting all mentars, please wait");
 
-            let pageData = await this.fetchJson("api/v2/my/mentars/?limit=100");
-            let result = pageData.results;
+            let mentarsPerPage = 100;
 
-            let counter = 1;
-            while (pageData.next != null) {
+            console.log(`query page 1`);
+            let firstPageData = await this.getMentarPage(1, mentarsPerPage);
+            //console.log("first : ", firstPageData);
+            let totalItems = firstPageData.data.meta.count;
+            let pageCount = Math.ceil(totalItems / mentarsPerPage);
 
-                await helper.sleep(helper.getWaitTime(counter, 1023));
-                pageData = await this.fetchJson(pageData.next.replace("https://app.earth2.io", ""));
-                result = result.concat(pageData.results);
-                counter++
+            let mentars = firstPageData.data.data;
+
+            for (let i = 2; i < pageCount; i++) {
+                console.log(`query ${i}/${pageCount}`);
+                let pageData = await this.getMentarPage(i, mentarsPerPage);
+                mentars = mentars.concat(pageData.data.data);
+                await helper.sleep(helper.getWaitTime(i, 1023));
             }
 
+            window.mentars = mentars;
+
+            let result = mentars;
             return result;
         }
 
-        fetchJson = async (fetchURL) => {
-            if (!helper.isAvailable(helper.checkUser)) {
-                console.log("ehh");
-                throw new Error("no you dont");
-            }
-
-            console.log("fetch: " + fetchURL);
-            let result = await fetch(fetchURL)
-                .then(r => r.json())
-                .then(r => r);
-            return result;
-        }
-
-        getUser = async () => {
-            this.userInfo = await fetch(`/api/v2/user_info/${window.auth0user.id}}/`).then(r => r.json()).then(r => r);
-            return this.userInfo;
-        }
-
-        getCSRFToken = async () => {
-            helper.checkUser();
-            let csrfToken = await cookieStore.get('csrftoken').then(r => r);
-            //console.log("token: ", csrfToken);
-            return csrfToken;
+        async getMentarPage (pageNumber, mentarsPerPage) {
+            return await ___reactContext.api.apiClient.get("mentars/", { params: { page: pageNumber, perPage: mentarsPerPage, sortBy: "description,id" } });
         }
 
         init () {
@@ -291,6 +218,7 @@
     class JewelSlotter {
         constructor(api) {
             this.api = api;
+            this.unslutAll = toUnslutCodes.length === 1 && toUnslutCodes[0] === "*";
         }
 
         async init () {
@@ -299,52 +227,32 @@
         }
 
         async unSlutAllMentars () {
-            console.log("mentars: ", this.mentars);
+            //console.log("mentars: ", this.mentars);
 
-            let toUnslutCodes = ["*"];
-            //to add specific jewels:
-            // BL1, //blue tier 1
-            // BL2, //blue tier 2
-            // BK1, //blue tier 1
-            // BK2, //blue tier 2
-            // GR1, GR2 //green
-            // OC1, OC2 //ochre
-            // SA1, SA2 //sandy
-            // GY1, GY2 //gray
-            // YE1, YE2 //yellow
-            // JA1 //jamaica
-            // SR1 //sunrise
-            // SU1 //sunset
-            // PU1 //purple
-            // OR1 //orange
-            //example: orange only              toUnslutCodes = ["OR1"];
-            //example: purple and sunrise       toUnslutCodes = ["PU1","SR1"];
+            let mentarsToUnslot = this.unslutAll ?
+                this.mentars.filter(m => m.attributes.jewels.data.length > 0)
+                : this.mentars.filter(m => m.attributes.jewels.data.some(mj => toUnslutCodes.includes(mj.uid)));
 
-            for (let i = 0; i < this.mentars.length; i++) {
-                let mentar = this.mentars[i];
+            console.log(`mentars to unslut: ${mentarsToUnslot.length} (total: ${this.mentars.length})`);
 
-                let msgPrefix = `[${i + 1}/${this.mentars.length}] (${mentar.description})`
+            for (let i = 0; i < mentarsToUnslot.length; i++) {
+                let mentar = mentarsToUnslot[i];
 
-                let slottedJewelCount = mentar.slotted_jewel_set.length;
-                if (slottedJewelCount > 0) {
+                let msgPrefix = `[${i + 1}/${mentarsToUnslot.length}] (${mentar.attributes.description})`
 
-                    //await helper.sleep(helper.getWaitTime(i + 1, 2047));
-                    await helper.sleep(helper.getWaitTime(i + 1, 128));
-                    console.log(`unslutting: ${msgPrefix} >> slutted jewels: ${slottedJewelCount}`);
+                let slottedJewelCount = mentar.attributes.jewels.data.length;
 
-                    for (let j = 0; j < slottedJewelCount; j++) {
-                        let jewel = mentar.slotted_jewel_set[j];
-                        //console.log("jewel: ", jewel);
+                let jewelsToUnslot = this.unslutAll ?
+                    mentar.attributes.jewels.data
+                    : mentar.attributes.jewels.data.filter(mj => toUnslutCodes.includes(mj.uid));
 
-                        if(toUnslutCodes.length === 1 && toUnslutCodes[0] === "*"){
-                            //if there's no limitation -> unslut everything
-                            await this.unSlotJewel(jewel.id);    
-                        } else if(toUnslutCodes.includes(jewel.uid)){
-                            await this.unSlotJewel(jewel.id);
-                        }
-                    }
-                } else {
-                    console.log(`skipping: ${msgPrefix}`)
+                //await helper.sleep(helper.getWaitTime(i + 1, 2047));
+                await helper.sleep(helper.getWaitTime(i + 1, 128));
+                console.log(`unslutting: ${msgPrefix} >> slutted jewels: ${jewelsToUnslot.length} (total: ${slottedJewelCount})`);
+
+                for (let j = 0; j < jewelsToUnslot.length; j++) {
+                    let jewel = jewelsToUnslot[j];
+                    await this.unSlotJewel(jewel.id);
                 }
             }
         }
@@ -362,5 +270,5 @@
     await window.jewelSlotter.init();
     await window.jewelSlotter.unSlutAllMentars();
     console.log("unslutting finished");
-    
+
 })();
