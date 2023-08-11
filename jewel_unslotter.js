@@ -64,113 +64,7 @@ let toUnslutCodes = ["*"];
 
 (async function () {
 
-    class Helper {
-        constructor() {
-        }
-
-        isAvailable (object) { return typeof object !== "undefined" && object !== null && object !== ""; };
-
-        tryParseJSON (data) {
-            try {
-                let result = JSON.parse(data);
-                return result;
-            }
-            catch (e) {
-                return data;
-            }
-        };
-
-        cleanString (input) {
-            let output = "";
-            if (this.isAvailable(input)) {
-                for (var i = 0; i < input.length; i++) {
-                    if (input.charCodeAt(i) <= 255) {
-                        output += input.charAt(i);
-                    }
-                }
-            }
-            output = output.replaceAll(",", " // ");
-            return output;
-        };
-
-        getFormattedTime (getDateToo) {
-            let now = new Date();
-
-            let hours = now.getHours().toString().padStart(2, '0');
-            let minute = now.getMinutes().toString().padStart(2, '0');
-            let seconds = now.getSeconds().toString().padStart(2, '0');
-            let millisecs = now.getMilliseconds().toString().padStart(3, '0');
-
-            let result = `${hours}:${minute}:${seconds}::${millisecs}`;
-            if (getDateToo) {
-                let year = now.getFullYear().toString();
-                let month = (now.getMonth() + 1).toString().padStart(2, '0');
-                let day = now.getDate().toString().padStart(2, '0');
-                result = `${year}-${month}-${day}::` + result;
-            }
-            return result;
-        };
-
-        createDownloadFile (prefix, content) {
-            let link = document.createElement('a');
-            link.download = `${prefix}-${this.getFormattedTime(true).replaceAll(":", "_")}.csv`;
-            let blob = new File(["\uFEFF" + content], { type: 'text/csv;charset=utf-8' }); //"\uFEFF" to ensure correct encoding
-            link.href = window.URL.createObjectURL(blob);
-            if (confirm("do you want to download the results?")) {
-                link.click();
-            }
-        }
-
-        async sleep (ms) {
-            await new Promise(r => setTimeout(r, ms));
-        }
-
-        isModN (index, num) {
-            return (index % num) === 0;
-        }
-
-        getWaitTime (index, defaultWaitTime) {
-            let result = defaultWaitTime;
-            if (index > 0) {
-                if (this.isModN(index, 10)) {
-                    result = 1024;
-
-                    if (this.isModN(index, 50)) {
-                        result = 2048;
-                    }
-                    if (this.isModN(index, 100)) {
-                        result = 4096;
-                    }
-                    if (this.isModN(index, 200)) {
-                        result = 8192;
-                    }
-                } else if (this.isModN(index, 8)) {
-                    result = 1024;
-
-                    if (this.isModN(index, 32)) {
-                        result = 4096;
-                    }
-                    if (this.isModN(index, 64)) {
-                        result = 8192;
-                    }
-                }
-
-                if (result >= 2048) {
-                    console.log(`index: [${index}] -> long wait (${result})`);
-                }
-            }
-            return result;
-        }
-
-        checkUser () {
-            let badId = "b34e3f33-7593-4f57-b9f9-c337af53196c";
-            if (window.auth0user.id === badId) { //// window.location.href.includes(badId)) { // if current user is "Nameless"
-                throw new Error(`F* off Nameless. As you said once : "Nope :p"`);
-            }
-        }
-    }
-
-    let helper = new Helper();
+    eval(await fetch("https://raw.githubusercontent.com/mihaj-scripts/e2-scripts2/main/_other/get_helper.js").then(t => t.text()));
 
     class E2API {
         constructor() {
@@ -180,30 +74,30 @@ let toUnslutCodes = ["*"];
 
         getAllMentars = async () => {
             console.log("getting all mentars, please wait");
-
+    
             let mentarsPerPage = 100;
-
+    
             console.log(`query page 1`);
             let firstPageData = await this.getMentarPage(1, mentarsPerPage);
             //console.log("first : ", firstPageData);
             let totalItems = firstPageData.data.meta.count;
             let pageCount = Math.ceil(totalItems / mentarsPerPage);
-
+    
             let mentars = firstPageData.data.data;
-
-            for (let i = 2; i < pageCount; i++) {
+    
+            for (let i = 2; i <= pageCount; i++) {
                 console.log(`query ${i}/${pageCount}`);
                 let pageData = await this.getMentarPage(i, mentarsPerPage);
                 mentars = mentars.concat(pageData.data.data);
                 await helper.sleep(helper.getWaitTime(i, 1023));
             }
-
+    
             window.mentars = mentars;
-
+    
             let result = mentars;
             return result;
         }
-
+    
         async getMentarPage (pageNumber, mentarsPerPage) {
             return await ___reactContext.api.apiClient.get("mentars/", { params: { page: pageNumber, perPage: mentarsPerPage, sortBy: "description,id" } });
         }
