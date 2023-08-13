@@ -181,34 +181,31 @@ let toUnslutCodes = ["*"];
         getAllMentars = async () => {
             console.log("getting all mentars, please wait");
 
-            let pageData = await this.fetchJson("api/v2/my/mentars/?limit=100");
-            let result = pageData.results;
+            let mentarsPerPage = 100;
 
-            let counter = 1;
-            while (pageData.next != null) {
+            console.log(`query page 1`);
+            let firstPageData = await this.getMentarPage(1, mentarsPerPage);
+            //console.log("first : ", firstPageData);
+            let totalItems = firstPageData.data.meta.count;
+            let pageCount = Math.ceil(totalItems / mentarsPerPage);
 
-                await helper.sleep(helper.getWaitTime(counter, 128));
-                pageData = await this.fetchJson(pageData.next.replace("https://app.earth2.io", ""));
-                result = result.concat(pageData.results);
-                counter++
+            let mentars = firstPageData.data.data;
+
+            for (let i = 2; i <= pageCount; i++) {
+                console.log(`query ${i}/${pageCount}`);
+                let pageData = await this.getMentarPage(i, mentarsPerPage);
+                mentars = mentars.concat(pageData.data.data);
+                await helper.sleep(helper.getWaitTime(i, 1023));
             }
 
+            window.mentars = mentars;
+
+            let result = mentars;
             return result;
         }
 
-        fetchJson = async (fetchURL) => {
-
-            console.log("fetch: " + fetchURL);
-            let result = await fetch(fetchURL)
-                .then(r => r.json())
-                .then(r => r);
-            return result;
-        }
-
-        getCSRFToken = async () => {
-            let csrfToken = await cookieStore.get('csrftoken').then(r => r);
-            //console.log("token: ", csrfToken);
-            return csrfToken;
+        async getMentarPage (pageNumber, mentarsPerPage) {
+            return await ___reactContext.api.apiClient.get("mentars/", { params: { page: pageNumber, perPage: mentarsPerPage, sortBy: "description,id" } });
         }
 
         init () {
@@ -233,21 +230,21 @@ let toUnslutCodes = ["*"];
             //console.log("mentars: ", this.mentars);
 
             let mentarsToUnslot = this.unslutAll ?
-                this.mentars
-                : this.mentars.filter(m => m.slotted_jewel_set.some(mj => toUnslutCodes.includes(mj.uid)));
+                this.mentars.filter(m => m.attributes.jewels.data.length > 0)
+                : this.mentars.filter(m => m.attributes.jewels.data.some(mj => toUnslutCodes.includes(mj.uid)));
 
             console.log(`mentars to unslut: ${mentarsToUnslot.length} (total: ${this.mentars.length})`);
 
             for (let i = 0; i < mentarsToUnslot.length; i++) {
                 let mentar = mentarsToUnslot[i];
 
-                let msgPrefix = `[${i + 1}/${mentarsToUnslot.length}] (${mentar.description})`
+                let msgPrefix = `[${i + 1}/${mentarsToUnslot.length}] (${mentar.attributes.description})`
 
-                let slottedJewelCount = mentar.slotted_jewel_set.length;
+                let slottedJewelCount = mentar.attributes.jewels.data.length;
 
-                let jewelsToUnslot = this.unslutAll ? 
-                    mentar.slotted_jewel_set 
-                    : mentar.slotted_jewel_set.filter(mj => toUnslutCodes.includes(mj.uid));
+                let jewelsToUnslot = this.unslutAll ?
+                    mentar.attributes.jewels.data
+                    : mentar.attributes.jewels.data.filter(mj => toUnslutCodes.includes(mj.attributes.uid));
 
                 //await helper.sleep(helper.getWaitTime(i + 1, 2047));
                 await helper.sleep(helper.getWaitTime(i + 1, 128));
@@ -271,7 +268,7 @@ let toUnslutCodes = ["*"];
 
     window.jewelSlotter = new JewelSlotter(api);
     await window.jewelSlotter.init();
-    await window.jewelSlotter.unSlutAllMentars();
-    console.log("unslutting finished");
+    // await window.jewelSlotter.unSlutAllMentars();
+    // console.log("unslutting finished");
 
 })();
