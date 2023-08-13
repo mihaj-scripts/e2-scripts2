@@ -1,4 +1,4 @@
-let toUnslutCodes = ["*"];
+let toUnslutCodes = ["PU1"];
 //to add specific jewels:
 //BL1 #Prime Blue Jewel 
 // BK1 #Prime Black Jewel 
@@ -219,6 +219,7 @@ let toUnslutCodes = ["*"];
         constructor(api) {
             this.api = api;
             this.unslutAll = toUnslutCodes.length === 1 && toUnslutCodes[0] === "*";
+            console.log("unslut all: "+this.unslutAll);
         }
 
         async init () {
@@ -231,7 +232,7 @@ let toUnslutCodes = ["*"];
 
             let mentarsToUnslot = this.unslutAll ?
                 this.mentars.filter(m => m.attributes.jewels.data.length > 0)
-                : this.mentars.filter(m => m.attributes.jewels.data.some(mj => toUnslutCodes.includes(mj.uid)));
+                : this.mentars.filter(m => m.attributes.jewels.data.some(mj => toUnslutCodes.includes(mj.attributes.uid)));
 
             console.log(`mentars to unslut: ${mentarsToUnslot.length} (total: ${this.mentars.length})`);
 
@@ -268,7 +269,7 @@ let toUnslutCodes = ["*"];
 
     window.jewelSlotter = new JewelSlotter(api);
     await window.jewelSlotter.init();
-    // await window.jewelSlotter.unSlutAllMentars();
-    // console.log("unslutting finished");
+    await window.jewelSlotter.unSlutAllMentars();
+    console.log("unslutting finished");
 
 })();
