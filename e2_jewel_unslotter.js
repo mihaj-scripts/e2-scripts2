@@ -1,4 +1,4 @@
-let toUnslutCodes = ["PU1"];
+let toUnslutCodes = ["*"];
 //to add specific jewels:
 //BL1 #Prime Blue Jewel 
 // BK1 #Prime Black Jewel 
