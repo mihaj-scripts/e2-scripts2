@@ -1,7 +1,10 @@
 let config = Object.freeze({
     doExport: true,
     doLogProperties: false,
-    doLogUsers: false
+    doLogUsers: false,
+    export: {
+        showSumEtherPerDay: false, //when set to true -> show the total ether raided instead of each raid results
+    }
 })
 
 class Helper {
@@ -438,7 +441,12 @@ function exportData () {
                 let resultsOnDate = target.results.filter(r => r.date === d);
                 if(resultsOnDate.length > 0){
                     //line += resultsOnDate[0].time+" ";
-                    line += resultsOnDate.map(re => re.ether).join(' ')
+                    if(config.export.showSumEtherPerDay){
+                        line += resultsOnDate.reduce((a,b) => a+parseFloat(b.ether),0).toFixed(2)
+                    } else {
+                        line += resultsOnDate.map(re => re.ether).join(' ')
+                    }
+                    
                 }
                 line += ","
             })
