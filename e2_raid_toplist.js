@@ -380,6 +380,7 @@ let data = allPropertyIds.map(pid => {
 
     let result = {
         property: relatedNotifications[0].data.homeLandfield,
+        fullProperty: allProperties.find(p => p.id === pid),
         targets: targetIds.map(tid => {
             let targetNotifications = relatedNotifications.filter(tn => tn.data.enemyLandfield.id === tid);
             //targetNotifications.forEach(n => n.result= n.event_type === "DROID_RAID_SUCCESSFUL" ? "W" : (n.event_type === "DROID_RAID_FAILED" ? "F" : "-"))
@@ -423,6 +424,11 @@ function exportData () {
 
     let lines = data.map(dt => {
         let matchingProperty = allProperties.find(p => p.id === dt.property.id);
+
+        if(!matchingProperty){
+            return "";
+        }
+
         return dt.targets.map(target => {
             let line = `${dt.property.id},${helper.cleanString(dt.property.location)},${helper.cleanString(dt.property.description)},${matchingProperty.attributes.tileCount},`;
             let link = `https://app.earth2.io/#profile/${target.owner.id}/properties`
@@ -460,11 +466,20 @@ function exportData () {
 }
 
 function logData () {
-    for (let i = 0; i < data.length; i++) {
-        let entry = data[i];
-        let property = entry.property;
-        console.log(`${(i + 1).toString().padStart(4, " ")}) ether: [${entry.totalEther.toFixed(2)}] - TC${entry.tileCount} -- ${property.description}`);
-    }
+    // for (let i = 0; i < data.length; i++) {
+    //     let entry = data[i];
+    //     let property = entry.property;
+    //     console.log(`${(i + 1).toString().padStart(4, " ")}) ether: [${entry.totalEther.toFixed(2)}] - TC${entry.tileCount} -- ${property.description}`);
+    // }
+    let toLog = data.map((entry,index) => ({
+        Rank: index+1,
+        Total: entry.totalEther.toFixed(2),
+        Civs: entry.fullProperty.meta.civilianIds.length,
+        Droids: entry.fullProperty.meta.droidIds.length,
+        Description: entry.property.description,
+
+    }))
+    console.table(toLog);
 }
 
 function topUsers () {
