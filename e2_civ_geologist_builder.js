@@ -1,6 +1,7 @@
 //HOW TO USE:
 //1) check config values, by default it checks for properties with 16 tiles or more, and just lists the civs that should be built
 //NOTE: build cost is 10x civs to build in e-ther
+//NOTE: by default it builds only on properties with resources
 //2) if you run it once and want to build, change the value of doAddGeologist to true and run again
 //or type this into console and press enter (without reloading the page): api.AddGeologists(landfieldsToAddCiv) 
 
