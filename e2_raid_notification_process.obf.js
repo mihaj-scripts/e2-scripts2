@@ -1,9 +1,3 @@
-//script purpose: 
-//* stores raid notification data (Raid win/lose notifications MUST BE enabled in settings)
-//* it can mark your notifications read, it can also delete them (see config below)
-//* it can also remove favorites where the last 'n' (removeFromFavoritesIfLastNRaidFails) raid fails
-//* or if the ratio of win/lose goes below a specific number
-
 let config = Object.freeze({
     markUnreadRaidNotifications: true, //set unread raiding notifications to "read" -> you can delete read notifications :)
     deleteReadNotifications: true, //when set to true it will delete all read notifications
@@ -560,13 +554,11 @@ class NotificationHandler {
             if (!favoritesForProperty.find(p => p.id === enemyLandfield.id)) {
                 console.log(`  ⛔ property [${enemyLandfield.description}](${enemyLandfield.location}) is not in favorites`);
             } else {
-                let response = await ___reactContext.api.apiClient.put(`/landfields/${enemyLandfield.id}/toggle_favorite`);
-                //console.log(`resp: `, response.data);
-                while (response.data.favorite !== null) {
-                    await helper.sleep(500);
-                    response = await ___reactContext.api.apiClient.put(`/landfields/${enemyLandfield.id}/toggle_favorite`);
-                    //console.log(`resp: `, response.data);
-                }
+                ___reactContext.api.apiClient.delete("/user_favorite_landfields/bulk_delete", {
+                    data: {
+                        landfield_ids: [enemyLandfield.id]
+                    }
+                });
             }
 
             //if item appear there -> toggle favorite
