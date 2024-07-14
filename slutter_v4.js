@@ -14,11 +14,26 @@ let config = {
     jewel_qualities: [
         "LUMINOUS", "CLEAR", "COMMON", "CLOUDY", "CRACKED"
     ],
+    plus3_jewels: [
+        'AMBER', 'ANDALUSITE', 'AQUAMARINE', 'AZURITE',
+        'BLOODSTONE',
+        'CATSEYE','CHRYSOCOLLA',
+        'EMERALD',
+        'GARNET',
+        'JADE',
+        'MALACHITE',
+        'OBSIDIAN','OPAL',
+        /*'PERIDOT',*/ 'PREHNITE', 'PYRITE',
+        'RUBY',
+        'SERPENTINE', 'SLATE', 'SODALITE', 'SPINEL', 'SUNSTONE',
+        'TANZANITE', 'TIGEREYE', 'TITANITE', 'TOPAZ', 'TURQUOISE',
+        'ZIRCON'
+    ],
     useInventoryJewelsOnly: true, //if set to true -> only uses jewels for calculation in your inventory | if set to false -> uses jewels in inventory and slotted too
     //BEWARE: if you set it to false, errors can occur... (I used it only for my own calculations, I'd recommend leaving it as is)
     avoidInterference: true, //if set to true -> avoids slotting jewels interfering with each other (e.g. yellow with black, anthracite with black, anthracite with yellow)
 
-    calculateIdealPriming: true, //when set to true -> ignores available jewels and tells you how the slotting should be 
+    calculateIdealPriming: false, //when set to true -> ignores available jewels and tells you how the slotting should be 
     //BEWARE: DO NOT try to actually slot with this
     calculateNeededDroids: false, //when set to true -> calculates the droids you need to have/buy
     onlyUseProspectorsForMaterialsPrimed: true, //if this is set to true -> we check only the materials primed on a property
@@ -33,6 +48,12 @@ let config = {
         t2: [1, 750]
     },
     showDroidsToBuySell: false, //when set to true -> gets your droid list, shows what you need to buy, and what amount of them you can sell
+
+    slotOnly1PrimingJewelAndNothingElse_Between_T1: [1, 4], // between these tile limits only slot ONE priming jewel and nothing else for T1
+    slotOnly1PrimingJewelAndNothingElse_Between_T2: [1, 4], // between these tile limits only slot ONE priming jewel and nothing else for T2
+
+    slotOnlyT3MixToMaxBoostEther_Between_T1: [100, 750],
+    slotOnlyT3MixToMaxBoostEther_Between_T2: [250, 750]
 }
 
 await(async () => {
@@ -334,7 +355,7 @@ class JewelSlotRules {
         return mentar.attributes.jewels.data.length + mentar.slottings[key].length < mentar.attributes.slotsCount;
     }
 
-    CanAddJewel (mentar, key, jewel) {
+    CanAddJewel (mentar, key, jewel, role) {
         let hasEnoughSpace = true;
         if (config.calculateIdealPriming) {
             hasEnoughSpace = this.HasEnoughSpaceInSlotting(mentar, key);
@@ -351,6 +372,14 @@ class JewelSlotRules {
                 || mentar.slottings[key].some(j => interferences.includes(j.color_name));
             result = result && !hasInterference;
         }
+
+        if (result) {
+            //if slotOnly1PrimingJewelAndNothingElse_Between_ is set and mentar is within tile limits:
+            //* for priming we only allow one -> any present in slottings or already slotted -> result is false
+            //* booster, filler -> not allowed
+        }
+
+
         return result;
     }
 
@@ -370,7 +399,7 @@ class JewelSlotRules {
         if (!config.useJewelStacks) {
 
             let jewel = allJewelsCopy.find(j => j.color_name === color_name);
-            if (jewel && this.CanAddJewel(mentar, key, jewel)) {
+            if (jewel && this.CanAddJewel(mentar, key, jewel, role)) {
                 jewel.role = role;
                 mentar.slottings[key].push(jewel);
                 allJewelsCopy = allJewelsCopy.filter(j => j.id !== jewel.id);
@@ -381,13 +410,13 @@ class JewelSlotRules {
             if (stack) {
                 let jewel_type = jewelData.jewel_types.find(jt => jt.uid === stack.uid)
                 let jewel = this.GetFakeJewel(stack.color_name, role, jewel_type.priming_lower[0]);
-                if(this.CanAddJewel(mentar,key,jewel)){
+                if (this.CanAddJewel(mentar, key, jewel, role)) {
                     jewel.role = role;
                     jewel.id = stack.id;
                     stack.count -= 1;
                     mentar.slottings[key].push(jewel);
                 }
-                
+
             }
         }
     }
@@ -503,7 +532,10 @@ class Logger {
             ...[config.calculateIdealPriming ? "color:red" : "color:lime", "color:snow"]);
         console.table(data);
 
-        this.logDroids(allDroidsNeeded, key);
+        if(config.calculateNeededDroids){
+            this.logDroids(allDroidsNeeded, key);
+        }
+        
     }
 
     static logDroids (allDroidsNeeded, key) {
@@ -837,9 +869,10 @@ class JewelAndDroidNeedCalculator {
                     return;
                 }
 
-                let fillerCount = 0;
-
-                fillerCount = mentar.attributes.slotsCount - mentar.attributes.jewels.data.length - mentar.slottings[key].length;
+                let fillerCount = mentar.attributes.slotsCount - mentar.attributes.jewels.data.length - mentar.slottings[key].length;
+                if (fillerCount === 0) {
+                    continue;
+                }
 
                 let fillers = [];
                 if (!config.useJewelStacks) {
@@ -850,16 +883,32 @@ class JewelAndDroidNeedCalculator {
                         allJewelsCopy = allJewelsCopy.filter(j => j.id !== filler.id);
                     });
                 } else {
-                    for (let i = 0; i < fillerCount; i++) {
-                        let stack = allJewelStacksCopy.find(js => js.count > 0);
-                        if (stack) {
-                            rules.TryAddJewel(mentar, key, stack.color_name, config.jewel_roles.filler);
+                    let t3mixedStacks = allJewelStacksCopy.filter(j => config.plus3_jewels.includes(j.color_name)).sort((a, b) => {
+                        let indexA = config.jewel_qualities.indexOf(a.quality_level);
+                        let indexB = config.jewel_qualities.indexOf(b.quality_level);
+                        if (indexA > indexB) {
+                            return 1;
+                        } else if (indexA == indexB && a.color_name < b.color_name) {
+                            return 1;
                         }
+                        return -1
+                    });
+                    let others = allJewelStacksCopy.filter(j => !config.plus3_jewels.includes(j => j.color_name));
+
+                    //let allPossibleStacks = [...t3mixedStacks, ...others].filter(jewel_stack => jewel_stack.count > 0);
+
+                    for (let i = 0; i < fillerCount; i++) {
+                        t3mixedStacks.forEach(stack => {
+                            rules.TryAddJewel(mentar, key, stack.color_name, config.jewel_roles.filler);
+                        })
                     }
+                    for (let i = 0; i < fillerCount; i++) {
+                        others.forEach(stack => {
+                            rules.TryAddJewel(mentar, key, stack.color_name, config.jewel_roles.filler);
+                        })
+                    }
+                    
                 }
-
-
-
             }
         }
 
@@ -905,6 +954,8 @@ class JewelAndDroidNeedCalculator {
         }
         console.log(".. done ..");
     }
+
+    getNotFullySlutted = () => allMentars.filter(j => j.attributes.slotsCount !== j.attributes.jewels.data.length);
 }
 let slutter = new JewelAndDroidNeedCalculator();
 slutter.calculate()
