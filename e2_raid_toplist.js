@@ -1,7 +1,7 @@
 let config = Object.freeze({
     doExport: true,
-    doLogProperties: false,
-    doLogUsers: false,
+    doLogProperties: true,
+    doLogUsers: true,
     export: {
         showSumEtherPerDay: false, //when set to true -> show the total ether raided instead of each raid results
     }
@@ -371,7 +371,7 @@ let allProperties = await api.getDroidLandfields();
 let allNotifications = (await cache.getAll()).filter(n => n.userId === auth0user.id && n.data.homeLandfield);
 let allRemovedProperties = (await cache.getAllRemoved()).filter(n => n.userId === auth0user.id)
 
-let allPropertyIds = [...new Set(allNotifications.map(n => n.data.homeLandfield.id))];
+let allPropertyIds = [...new Set(allNotifications.map(n => n.data.homeLandfield.id))].filter(pid => allProperties.find(p => p.id === pid));
 
 let data = allPropertyIds.map(pid => {
 
