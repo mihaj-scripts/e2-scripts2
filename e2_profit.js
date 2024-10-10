@@ -58,16 +58,15 @@ class DATA_ACCESS {
             }
         }
 
-        for (let i = 1; i <= pageCount; i++) {
-            console.log(`processing [${i}/${pageCount}]`);
+        for (let i = 0; i <= pageCount; i++) {
             let pageNumber = i + 1;
 
             await helper.sleep(helper.getWaitTime(i, defaultWaitTime));
 
+
             let pageData = await this.getTransactionPage(pageNumber, balance_change_type);
             if (pageData) {
                 transactions.push(pageData);
-                //console.log(` transactions at page [${i}]`, pageData.results);
                 this.currentResult.push(pageData);
             }
         }
