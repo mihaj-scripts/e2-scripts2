@@ -1,3 +1,7 @@
+let config = {
+    lastDays: 7, //e.g. 7 means the last 7 days, to get all data use -1
+}
+
 //profit in cd, jewel and property trades
 await(async () => {
     let scripts = [
@@ -16,11 +20,13 @@ await(async () => {
     Rollbar.configure({ enabled: false });
 })();
 
+let limit = new Date(new Date().setDate(new Date().getDate() - config.lastDays));
+
 //BAZAAR_PURCHASE,BAZAAR_PURCHASE_FEE,BAZAAR_SALE
 
 class DATA_ACCESS {
 
-    constructor(){
+    constructor() {
         this.itemsPerPage = 100;
 
         this.currentResult = [];
@@ -34,7 +40,8 @@ class DATA_ACCESS {
                 perPage: null,
                 ticker: null,
                 type: balance_change_type
-            }})
+            }
+        })
         //console.log(`data [${pageNumber}]: `, data);
 
         return data.data;
@@ -58,36 +65,56 @@ class DATA_ACCESS {
             }
         }
 
-        for (let i = 0; i <= pageCount; i++) {
-            let pageNumber = i + 1;
-
+        let limitReached = false;
+        for (let i = 1; i <= pageCount; i++) {
+            console.log(`processing [${i}/${pageCount}]`);
             await helper.sleep(helper.getWaitTime(i, defaultWaitTime));
 
-
-            let pageData = await this.getTransactionPage(pageNumber, balance_change_type);
+            let pageData = await this.getTransactionPage(i, balance_change_type);
             if (pageData) {
+                if (config.lastDays !== -1) {
+                    let filtered = pageData.data.filter(d => new Date(d.attributes.created) >= limit);
+                    if (filtered.length !== pageData.data.length) {
+                        //console.log("limit reached", {filtered, d: pageData.data});
+                        pageData.data = filtered;
+                        limitReached = true;
+                    }
+                }
+
                 transactions.push(pageData);
+                //console.log(` transactions at page [${i}]`, pageData);
                 this.currentResult.push(pageData);
+
+                if (limitReached) {
+                    console.log("limit reached")
+                    break;
+                }
             }
         }
         return transactions;
     }
 }
 
+if (config.lastDays !== -1) {
+    console.log(`getting data after ${limit}`);
+}
+
 let api = new DATA_ACCESS();
 let bazaarTransactions = await api.getAllTransactions("BAZAAR_PURCHASE,BAZAAR_PURCHASE_FEE,BAZAAR_SALE");
 let propertyTransactions = await api.getAllTransactions("PURCHASE,SALE");
+let holoPurchase = await api.getAllTransactions("HOLOBUILDING_PURCHASE");
+let avatarPurchase = await api.getAllTransactions("AVATAR_PURCHASE");
 
 let filterByAmount = (transactions, isBuy) => transactions.filter(tr => isBuy ? tr.attributes.amount < 0 : tr.attributes.amount > 0);
 
-let sum = (transactions) => transactions.reduce((a,b) => a+b.attributes.amount, 0);
+let sum = (transactions) => transactions.reduce((a, b) => a + b.attributes.amount, 0);
 
 let summary = (allSpecificTransactions, prefix) => {
     let buys = filterByAmount(allSpecificTransactions, true);
     let sales = filterByAmount(allSpecificTransactions, false);
-    let buysSum = sum(buys)*-1;
+    let buysSum = sum(buys) * -1;
     let salesSum = sum(sales);
-    console.log(`[${prefix}] buy: $${buysSum.toFixed(2)} | sale: ${salesSum.toFixed(2)} -> profit: ${(salesSum-buysSum).toFixed(2)} `);
+    console.log(`[${prefix}] buy: $${buysSum.toFixed(2)} | sale: ${salesSum.toFixed(2)} -> profit: ${(salesSum - buysSum).toFixed(2)} `);
 }
 
 let allPropertyTransactions = propertyTransactions.map(d => d.data).flat();
@@ -103,3 +130,9 @@ summary(allDroidsTransactions, "droids");
 summary(allCivsTransactions, "civs");
 summary(allJewelTransactions, "jewel");
 summary(allHoloTransactions, "holo");
+
+let allHoloPTransactions = holoPurchase.map(d => d.data).flat();
+summary(allHoloPTransactions, "holoPurchase");
+
+let allAvatarTransactions = avatarPurchase.map(d => d.data).flat();
+summary(allAvatarTransactions, "avatarPurchase");
