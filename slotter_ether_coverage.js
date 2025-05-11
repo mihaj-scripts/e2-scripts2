@@ -113,7 +113,7 @@ _m.slutter.calculate();
 
 _m.data.propertiesToSlut = _m.data.mentars.filter(p => p.slottings);
 if (_m.data.propertiesToSlut.length === 0) {
-    _m.slutter.info("no properties to slot :)");
+    _m.slotter_logger.info("no properties to slot :)");
 } else {
     for (let i = 0; i < _m.data.propertiesToSlut.length; i++) {
         let p = _m.data.propertiesToSlut[i];
