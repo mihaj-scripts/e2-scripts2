@@ -1,5 +1,5 @@
-let config = {
-    pageSize: 200,
+var config = {
+    pageSize: 60,
 }
 
 const modules = [
